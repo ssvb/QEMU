@@ -431,4 +431,23 @@ DEF_HELPER_FLAGS_3(prepend, TCG_CALL_CONST | TCG_CALL_PURE, i32, int, i32, i32)
 DEF_HELPER_FLAGS_3(balign, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32, i32)
 DEF_HELPER_FLAGS_2(packrl_ph, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32)
 
+/* DSP Accumulator and DSPControl Access Sub-class insns */
+DEF_HELPER_FLAGS_3(extr_w, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extr_r_w, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extr_rs_w, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extr_s_h, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extrv_s_h, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(extrv_w, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(extrv_r_w, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(extrv_rs_w, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(extp, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extpv, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(extpdp, 0, i32, env, int, int)
+DEF_HELPER_FLAGS_3(extpdpv, 0, i32, env, int, i32)
+DEF_HELPER_FLAGS_3(shilo, 0, void, env, int, int)
+DEF_HELPER_FLAGS_3(shilov, 0, void, env, int, i32)
+DEF_HELPER_FLAGS_3(mthlip, 0, void, env, int, i32)
+DEF_HELPER_FLAGS_3(wrdsp, 0, void, env, i32, int)
+DEF_HELPER_FLAGS_2(rddsp, 0, i32, env, i32)
+
 #include "def-helper.h"

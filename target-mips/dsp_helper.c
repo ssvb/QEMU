@@ -3362,6 +3362,471 @@ uint32_t helper_packrl_ph(uint32_t rs, uint32_t rt)
     return rd;
 }
 
+/** DSP Accumulator and DSPControl Access Sub-class insns **/
+uint32_t helper_extr_w(CPUMIPSState *env, int ac, int shift)
+{
+    int32_t tempI;
+    int64_t tempDL[2];
+
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempI = (tempDL[0] >> 1) & MIPSDSP_LLO;
+
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+
+    if ((!(tempDL[1] == 0 && (tempDL[0] & MIPSDSP_LHI) == 0x00)) && \
+        (!(tempDL[1] == 1 && (tempDL[0] & MIPSDSP_LHI) == MIPSDSP_LHI))) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    return tempI;
+}
+
+uint32_t helper_extr_r_w(CPUMIPSState *env, int ac, int shift)
+{
+    int32_t tempI;
+    int64_t tempDL[2];
+
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 && (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+    tempI = tempDL[0] >> 1;
+
+    return tempI;
+}
+
+uint32_t helper_extr_rs_w(CPUMIPSState *env, int ac, int shift)
+{
+    int32_t tempI, temp64;
+    int64_t tempDL[2];
+
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+    tempI = tempDL[0] >> 1;
+
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        temp64 = tempDL[1];
+        if (temp64 == 0) {
+            tempI = 0x7FFFFFFF;
+        } else {
+            tempI = 0x80000000;
+        }
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    return tempI;
+}
+
+uint32_t helper_extr_s_h(CPUMIPSState *env, int ac, int shift)
+{
+    int64_t temp;
+    uint32_t tempI;
+
+    temp = mipsdsp_rashift_short_acc(env, ac, shift);
+    if (temp > 0x0000000000007FFFull) {
+        temp &= MIPSDSP_LHI;
+        temp |= 0x00007FFF;
+        set_DSPControl_overflow_flag(env, 1, 23);
+    } else if (temp < 0xFFFFFFFFFFFF8000ull) {
+        temp &= MIPSDSP_LHI;
+        temp |= 0xFFFF8000;
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempI = temp & 0xFFFFFFFF;
+    return tempI;
+}
+
+uint32_t helper_extrv_s_h(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    uint32_t rd;
+    int32_t shift, tempI;
+    int64_t tempL;
+
+    shift = rs & 0x0F;
+    tempL = mipsdsp_rashift_short_acc(env, ac, shift);
+    if (tempL > 0x000000000007FFFull) {
+        tempI = 0x00007FFF;
+        set_DSPControl_overflow_flag(env, 1, 23);
+    } else if (tempL < 0xFFFFFFFFFFF8000ull) {
+        tempI = 0xFFFF8000;
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+    rd = tempI;
+
+    return rd;
+}
+
+uint32_t helper_extrv_w(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t shift, tempI;
+    int64_t tempDL[2];
+
+    shift = rs & 0x0F;
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempI = tempDL[0] >> 1;
+
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    return tempI;
+}
+
+uint32_t helper_extrv_r_w(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t shift, tempI;
+    int64_t tempDL[2];
+
+    shift = rs & 0x0F;
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+    tempI = tempDL[0] >> 1;
+
+    return tempI;
+}
+
+uint32_t helper_extrv_rs_w(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t shift, tempI;
+    int64_t tempDL[2];
+
+    shift = rs & 0x0F;
+    mipsdsp__rashift_short_acc(env, tempDL, ac, shift);
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    tempDL[0] += 1;
+    if (tempDL[0] == 0) {
+        tempDL[1] += 1;
+    }
+    tempI = tempDL[0] >> 1;
+
+    if ((tempDL[1] != 0 || (tempDL[0] & MIPSDSP_LHI) != 0) && \
+        (tempDL[1] != 1 || (tempDL[0] & MIPSDSP_LHI) != MIPSDSP_LHI)) {
+        if (tempDL[1] == 0) {
+            tempI = 0x7FFFFFFF;
+        } else {
+            tempI = 0x80000000;
+        }
+        set_DSPControl_overflow_flag(env, 1, 23);
+    }
+
+    return tempI;
+}
+
+uint32_t helper_extp(CPUMIPSState *env, int ac, int size)
+{
+    int32_t start_pos;
+    uint32_t temp;
+    uint64_t acc;
+
+    temp = 0;
+    start_pos = get_DSPControl_pos(env);
+    if (start_pos - (size + 1) >= -1) {
+        acc = ((uint64_t)env->active_tc.HI[ac] << 32) | \
+              ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+        temp = (acc >> (start_pos - size)) & \
+               (((uint32_t)0x01 << (size + 1)) - 1);
+        set_DSPControl_efi(env, 0);
+    } else {
+        set_DSPControl_efi(env, 1);
+    }
+
+    return temp;
+}
+
+uint32_t helper_extpv(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t start_pos, size;
+    uint32_t temp;
+    uint64_t acc;
+
+    temp = 0;
+    start_pos = get_DSPControl_pos(env);
+    size = rs & 0x1F;
+
+    if (start_pos - (size + 1) >= -1) {
+        acc = ((uint64_t)env->active_tc.HI[ac] << 32) | \
+              ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+        temp = (acc >> (start_pos - size)) & \
+               (((uint32_t)0x01 << (size + 1)) - 1);
+        set_DSPControl_efi(env, 0);
+    } else {
+        set_DSPControl_efi(env, 1);
+    }
+
+    return temp;
+}
+
+uint32_t helper_extpdp(CPUMIPSState *env, int ac, int size)
+{
+    int32_t start_pos;
+    uint32_t temp;
+    uint64_t acc;
+
+    temp = 0;
+    start_pos = get_DSPControl_pos(env);
+    if (start_pos - (size + 1) >= -1) {
+        acc  = ((uint64_t)env->active_tc.HI[ac] << 32) | \
+               ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+        temp = (acc >> (start_pos - size)) & \
+               (((uint32_t)0x01 << (size + 1)) - 1);
+
+        set_DSPControl_pos(env, start_pos - (size + 1));
+        set_DSPControl_efi(env, 0);
+    } else {
+        set_DSPControl_efi(env, 1);
+    }
+
+    return temp;
+}
+
+uint32_t helper_extpdpv(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t start_pos, size;
+    uint32_t temp;
+    uint64_t acc;
+
+    temp = 0;
+    start_pos = get_DSPControl_pos(env);
+    size = rs & 0x1F;
+
+    if (start_pos - (size + 1) >= -1) {
+        acc  = ((uint64_t)env->active_tc.HI[ac] << 32) | \
+               ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+        temp = (acc >> (start_pos - size)) & (((int)0x01 << (size + 1)) - 1);
+        set_DSPControl_pos(env, start_pos - (size + 1));
+        set_DSPControl_efi(env, 0);
+    } else {
+        set_DSPControl_efi(env, 1);
+    }
+
+    return temp;
+}
+
+void helper_shilo(CPUMIPSState *env, int ac, int shift)
+{
+    uint8_t  sign;
+    uint64_t temp, acc;
+
+    shift = (shift << 26) >> 26;
+    sign  = (shift >>  5) & 0x01;
+    shift = (sign == 0) ? shift : -shift;
+    acc = (((uint64_t)env->active_tc.HI[ac] << 32) & MIPSDSP_LHI) | \
+          ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+
+    if (shift == 0) {
+        temp = acc;
+    } else {
+        if (sign == 0) {
+            temp = acc >> shift;
+        } else {
+            temp = acc << shift;
+        }
+    }
+
+    env->active_tc.HI[ac] = (temp & MIPSDSP_LHI) >> 32;
+    env->active_tc.LO[ac] =  temp & MIPSDSP_LLO;
+}
+
+void helper_shilov(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    uint8_t sign;
+    int8_t  rs5_0;
+    uint64_t temp, acc;
+
+    rs5_0 = rs & 0x3F;
+    rs    = (rs5_0 << 2) >> 2;
+    sign  = (rs5_0 >> 5) & 0x01;
+    rs5_0 = (sign == 0) ? rs : -rs;
+    acc   = (((uint64_t)env->active_tc.HI[ac] << 32) & MIPSDSP_LHI) | \
+            ((uint64_t)env->active_tc.LO[ac] & MIPSDSP_LLO);
+    if (rs5_0 == 0) {
+        temp = acc;
+    } else {
+        if (sign == 0) {
+            temp = acc >> rs5_0;
+        } else {
+            temp = acc << rs5_0;
+        }
+    }
+
+    env->active_tc.HI[ac] = (temp & MIPSDSP_LHI) >> 32;
+    env->active_tc.LO[ac] =  temp & MIPSDSP_LLO;
+}
+
+void helper_mthlip(CPUMIPSState *env, int ac, uint32_t rs)
+{
+    int32_t tempA, tempB, pos;
+
+    tempA = rs;
+    tempB = env->active_tc.LO[ac];
+    env->active_tc.HI[ac] = tempB;
+    env->active_tc.LO[ac] = tempA;
+    pos = get_DSPControl_pos(env);
+
+    if (pos > 32) {
+        return;
+    } else {
+        set_DSPControl_pos(env, pos + 32);
+    }
+}
+
+void helper_wrdsp(CPUMIPSState *env, uint32_t rs, int mask_num)
+{
+    uint8_t  mask[6];
+    uint8_t  i;
+    uint32_t newbits, overwrite;
+    target_ulong dsp;
+
+    newbits   = 0x00;
+    overwrite = 0xFFFFFFFF;
+    dsp = env->active_tc.DSPControl;
+
+    for (i = 0; i < 6; i++) {
+        mask[i] = (mask_num >> i) & 0x01;
+    }
+
+    if (mask[0] == 1) {
+        overwrite &= 0xFFFFFFC0;
+        newbits   &= 0xFFFFFFC0;
+        newbits   |= 0x0000003F & rs;
+    }
+
+    if (mask[1] == 1) {
+        overwrite &= 0xFFFFE07F;
+        newbits   &= 0xFFFFE07F;
+        newbits   |= 0x00001F80 & rs;
+    }
+
+    if (mask[2] == 1) {
+        overwrite &= 0xFFFFDFFF;
+        newbits   &= 0xFFFFDFFF;
+        newbits   |= 0x00002000 & rs;
+    }
+
+    if (mask[3] == 1) {
+        overwrite &= 0xFF00FFFF;
+        newbits   &= 0xFF00FFFF;
+        newbits   |= 0x00FF0000 & rs;
+    }
+
+    if (mask[4] == 1) {
+        overwrite &= 0x00FFFFFF;
+        newbits   &= 0x00FFFFFF;
+        newbits   |= 0xFF000000 & rs;
+    }
+
+    if (mask[5] == 1) {
+        overwrite &= 0xFFFFBFFF;
+        newbits   &= 0xFFFFBFFF;
+        newbits   |= 0x00004000 & rs;
+    }
+
+    dsp = dsp & overwrite;
+    dsp = dsp | newbits;
+    env->active_tc.DSPControl = dsp;
+}
+
+uint32_t helper_rddsp(CPUMIPSState *env, uint32_t masknum)
+{
+    uint8_t  mask[6];
+    uint32_t ruler, i;
+    uint32_t temp;
+    uint32_t rd;
+    target_ulong dsp;
+
+    ruler = 0x01;
+    for (i = 0; i < 6; i++) {
+        mask[i] = (masknum & ruler) >> i ;
+        ruler = ruler << 1;
+    }
+
+    temp  = 0x00;
+    dsp = env->active_tc.DSPControl;
+
+    if (mask[0] == 1) {
+        temp |= dsp & 0x3F;
+    }
+
+    if (mask[1] == 1) {
+        temp |= dsp & 0x1F80;
+    }
+
+    if (mask[2] == 1) {
+        temp |= dsp & 0x2000;
+    }
+
+    if (mask[3] == 1) {
+        temp |= dsp & 0x00FF0000;
+    }
+
+    if (mask[4] == 1) {
+        temp |= dsp & 0xFF000000;
+    }
+
+    if (mask[5] == 1) {
+        temp |= dsp & 0x4000;
+    }
+
+    rd = temp;
+
+    return rd;
+}
+
 #undef MIPSDSP_LHI
 #undef MIPSDSP_LLO
 #undef MIPSDSP_HI

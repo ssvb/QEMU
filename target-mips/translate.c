@@ -331,6 +331,8 @@ enum {
     OPC_INSV_DSP       = 0x0C | OPC_SPECIAL3,
     /* MIPS DSP Compare-Pick Sub-class */
     OPC_APPEND_DSP     = 0x31 | OPC_SPECIAL3,
+    /* MIPS DSP Accumulator and DSPControl Access Sub-class */
+    OPC_EXTR_W_DSP     = 0x38 | OPC_SPECIAL3,
 };
 
 /* BSHFL opcodes */
@@ -534,6 +536,28 @@ enum {
     OPC_APPEND  = (0x00 << 6) | OPC_APPEND_DSP,
     OPC_PREPEND = (0x01 << 6) | OPC_APPEND_DSP,
     OPC_BALIGN  = (0x10 << 6) | OPC_APPEND_DSP,
+};
+
+#define MASK_EXTR_W(op) (MASK_SPECIAL3(op) | (op & (0x1F << 6)))
+enum {
+    /* MIPS DSP Accumulator and DSPControl Access Sub-class */
+    OPC_EXTR_W     = (0x00 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTR_R_W   = (0x04 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTR_RS_W  = (0x06 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTR_S_H   = (0x0E << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTRV_S_H  = (0x0F << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTRV_W    = (0x01 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTRV_R_W  = (0x05 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTRV_RS_W = (0x07 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTP       = (0x02 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTPV      = (0x03 << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTPDP     = (0x0A << 6) | OPC_EXTR_W_DSP,
+    OPC_EXTPDPV    = (0x0B << 6) | OPC_EXTR_W_DSP,
+    OPC_SHILO      = (0x1A << 6) | OPC_EXTR_W_DSP,
+    OPC_SHILOV     = (0x1B << 6) | OPC_EXTR_W_DSP,
+    OPC_MTHLIP     = (0x1F << 6) | OPC_EXTR_W_DSP,
+    OPC_WRDSP      = (0x13 << 6) | OPC_EXTR_W_DSP,
+    OPC_RDDSP      = (0x12 << 6) | OPC_EXTR_W_DSP,
 };
 
 /* Coprocessor 0 (rs field) */
@@ -13007,6 +13031,157 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
                     gen_helper_balign(cpu_gpr[rt], cpu_gpr[rt],
                                       cpu_gpr[rs], temp_rd);
                     tcg_temp_free(temp_rd);
+                    break;
+                }
+            }
+            break;
+        case OPC_EXTR_W_DSP:
+            op2 = MASK_EXTR_W(ctx->opcode);
+            switch (op2) {
+            case OPC_EXTR_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extr_w(cpu_gpr[rt], cpu_env, temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTR_R_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extr_r_w(cpu_gpr[rt], cpu_env, temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTR_RS_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extr_rs_w(cpu_gpr[rt], cpu_env,
+                                         temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTR_S_H:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extr_s_h(cpu_gpr[rt], cpu_env, temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTRV_S_H:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extrv_s_h(cpu_gpr[rt], cpu_env,
+                                         temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_EXTRV_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extrv_w(cpu_gpr[rt], cpu_env,
+                                       temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_EXTRV_R_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extrv_r_w(cpu_gpr[rt], cpu_env,
+                                         temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_EXTRV_RS_W:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extrv_rs_w(cpu_gpr[rt], cpu_env,
+                                          temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_EXTP:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extp(cpu_gpr[rt], cpu_env, temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTPV:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extpv(cpu_gpr[rt], cpu_env,
+                                     temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_EXTPDP:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    TCGv temp_rs = tcg_const_i32(rs);
+                    gen_helper_extpdp(cpu_gpr[rt], cpu_env, temp_rd, temp_rs);
+                    tcg_temp_free(temp_rd);
+                    tcg_temp_free(temp_rs);
+                    break;
+                }
+            case OPC_EXTPDPV:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_extpdpv(cpu_gpr[rt], cpu_env,
+                                       temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_SHILO:
+                {
+                    TCGv temp_imm;
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    imm = (ctx->opcode >> 20) & 0x3F;
+                    temp_imm = tcg_const_i32(imm);
+                    gen_helper_shilo(cpu_env, temp_rd, temp_imm);
+                    tcg_temp_free(temp_imm);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_SHILOV:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_shilov(cpu_env, temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_MTHLIP:
+                {
+                    TCGv temp_rd = tcg_const_i32(rd);
+                    gen_helper_mthlip(cpu_env, temp_rd, cpu_gpr[rs]);
+                    tcg_temp_free(temp_rd);
+                    break;
+                }
+            case OPC_WRDSP:
+                {
+                    TCGv temp_imm;
+                    imm = (ctx->opcode >> 11) & 0x3FF;
+                    temp_imm = tcg_const_i32(imm);
+                    gen_helper_wrdsp(cpu_env, cpu_gpr[rs], temp_imm);
+                    tcg_temp_free(temp_imm);
+                    break;
+                }
+            case OPC_RDDSP:
+                {
+                    TCGv temp_imm;
+                    imm = (ctx->opcode >> 16) & 0x03FF;
+                    temp_imm = tcg_const_i32(imm);
+                    gen_helper_rddsp(cpu_gpr[rd], cpu_env, temp_imm);
+                    tcg_temp_free(temp_imm);
                     break;
                 }
             }
