@@ -414,4 +414,21 @@ DEF_HELPER_FLAGS_4(mulsa_w_ph, 0, void, env, int, i32, i32)
 DEF_HELPER_FLAGS_1(bitrev, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32)
 DEF_HELPER_FLAGS_3(insv, 0, i32, env, i32, i32)
 
+/* DSP Compare-Pick Sub-class insns */
+DEF_HELPER_FLAGS_3(cmpu_eq_qb, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_3(cmpu_lt_qb, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_3(cmpu_le_qb, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_2(cmpgu_eq_qb, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32)
+DEF_HELPER_FLAGS_2(cmpgu_lt_qb, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32)
+DEF_HELPER_FLAGS_2(cmpgu_le_qb, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32)
+DEF_HELPER_FLAGS_3(cmp_eq_ph, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_3(cmp_lt_ph, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_3(cmp_le_ph, 0, void, env, i32, i32)
+DEF_HELPER_FLAGS_3(pick_qb, 0, i32, env, i32, i32)
+DEF_HELPER_FLAGS_3(pick_ph, 0, i32, env, i32, i32)
+DEF_HELPER_FLAGS_3(append, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32, int)
+DEF_HELPER_FLAGS_3(prepend, TCG_CALL_CONST | TCG_CALL_PURE, i32, int, i32, i32)
+DEF_HELPER_FLAGS_3(balign, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32, i32)
+DEF_HELPER_FLAGS_2(packrl_ph, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32, i32)
+
 #include "def-helper.h"

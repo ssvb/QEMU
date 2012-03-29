@@ -3021,6 +3021,347 @@ uint32_t helper_insv(CPUMIPSState *env, uint32_t rs, uint32_t rt)
     return temp;
 }
 
+/** DSP Compare-Pick Sub-class insns **/
+void helper_cmpu_eq_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint32_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t flag;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 == rt3);
+    cc2 = (rs2 == rt2);
+    cc1 = (rs1 == rt1);
+    cc0 = (rs0 == rt0);
+
+    flag = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    set_DSPControl_24(env, flag, 4);
+}
+
+void helper_cmpu_lt_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint32_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t flag;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 < rt3);
+    cc2 = (rs2 < rt2);
+    cc1 = (rs1 < rt1);
+    cc0 = (rs0 < rt0);
+
+    flag = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    set_DSPControl_24(env, flag, 4);
+}
+
+void helper_cmpu_le_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint32_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t flag;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 <= rt3);
+    cc2 = (rs2 <= rt2);
+    cc1 = (rs1 <= rt1);
+    cc0 = (rs0 <= rt0);
+
+    flag = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    set_DSPControl_24(env, flag, 4);
+}
+
+
+uint32_t helper_cmpgu_eq_qb(uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t temp;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 == rt3);
+    cc2 = (rs2 == rt2);
+    cc1 = (rs1 == rt1);
+    cc0 = (rs0 == rt0);
+
+    temp = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    rd = temp;
+
+    return rd;
+}
+
+uint32_t helper_cmpgu_lt_qb(uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint32_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t temp;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 < rt3);
+    cc2 = (rs2 < rt2);
+    cc1 = (rs1 < rt1);
+    cc0 = (rs0 < rt0);
+
+    temp = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    rd = temp;
+
+    return rd;
+}
+
+uint32_t helper_cmpgu_le_qb(uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint32_t cc3 = 0, cc2 = 0, cc1 = 0, cc0 = 0;
+    uint32_t temp;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    cc3 = (rs3 <= rt3);
+    cc2 = (rs2 <= rt2);
+    cc1 = (rs1 <= rt1);
+    cc0 = (rs0 <= rt0);
+
+    temp = (cc3 << 3) | (cc2 << 2) | (cc1 << 1) | cc0;
+    rd = temp;
+
+    return rd;
+}
+
+void helper_cmp_eq_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    int16_t rsh, rsl, rth, rtl;
+    int32_t flag;
+    int32_t ccA = 0, ccB = 0;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    ccB = (rsh == rth);
+    ccA = (rsl == rtl);
+
+    flag = (ccB << 1) | ccA;
+    set_DSPControl_24(env, flag, 2);
+}
+
+void helper_cmp_lt_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    int16_t rsh, rsl, rth, rtl;
+    int32_t flag;
+    int32_t ccA = 0, ccB = 0;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    ccB = (rsh < rth);
+    ccA = (rsl < rtl);
+
+    flag = (ccB << 1) | ccA;
+    set_DSPControl_24(env, flag, 2);
+}
+
+void helper_cmp_le_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    int16_t rsh, rsl, rth, rtl;
+    int32_t flag;
+    int32_t ccA = 0, ccB = 0;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    ccB = (rsh <= rth);
+    ccA = (rsl <= rtl);
+
+    flag = (ccB << 1) | ccA;
+    set_DSPControl_24(env, flag, 2);
+}
+
+uint32_t helper_pick_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t tp3, tp2, tp1, tp0;
+
+    uint32_t dsp27, dsp26, dsp25, dsp24, rd;
+    target_ulong dsp;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    dsp = env->active_tc.DSPControl;
+    dsp27 = (dsp >> 27) & 0x01;
+    dsp26 = (dsp >> 26) & 0x01;
+    dsp25 = (dsp >> 25) & 0x01;
+    dsp24 = (dsp >> 24) & 0x01;
+
+    tp3 = dsp27 == 1 ? rs3 : rt3;
+    tp2 = dsp26 == 1 ? rs2 : rt2;
+    tp1 = dsp25 == 1 ? rs1 : rt1;
+    tp0 = dsp24 == 1 ? rs0 : rt0;
+
+    rd = ((uint32_t)tp3 << 24) | \
+         ((uint32_t)tp2 << 16) | \
+         ((uint32_t)tp1 <<  8) | \
+         (uint32_t)tp0;
+
+    return rd;
+}
+
+uint32_t helper_pick_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl, rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t dsp25, dsp24;
+    uint32_t rd;
+    target_ulong dsp;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    dsp = env->active_tc.DSPControl;
+    dsp25 = (dsp >> 25) & 0x01;
+    dsp24 = (dsp >> 24) & 0x01;
+
+    tempB = (dsp25 == 1) ? rsh : rth;
+    tempA = (dsp24 == 1) ? rsl : rtl;
+    rd = (((uint32_t)tempB << 16) & MIPSDSP_HI) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_append(uint32_t rt, uint32_t rs, int sa)
+{
+    int len;
+    uint32_t temp;
+
+    len = sa & 0x1F;
+
+    if (len == 0) {
+        temp = rt;
+    } else {
+        temp = (rt << len) | (rs & (((uint32_t)0x01 << len) - 1));
+    }
+    rt = temp;
+
+    return temp;
+}
+
+uint32_t helper_prepend(int sa, uint32_t rs, uint32_t rt)
+{
+    uint32_t temp;
+
+    if (sa == 0) {
+        temp = rt;
+    } else {
+        temp = (rs << (32 - sa)) | rt >> sa;
+    }
+
+    rt = temp;
+
+    return rt;
+}
+
+uint32_t helper_balign(uint32_t rt, uint32_t rs, uint32_t bp)
+{
+    uint32_t temp;
+    bp = bp & 0x03;
+
+    if (bp == 0 || bp == 2) {
+        return rt;
+    } else {
+        temp = (rt << (8 * bp)) | (rs >> (8 * (4 - bp)));
+    }
+    rt = temp;
+
+    return rt;
+}
+
+uint32_t helper_packrl_ph(uint32_t rs, uint32_t rt)
+{
+    uint16_t rsl, rth;
+    uint32_t rd;
+
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rd = (rsl << 16) | rth;
+
+    return rd;
+}
+
 #undef MIPSDSP_LHI
 #undef MIPSDSP_LLO
 #undef MIPSDSP_HI
