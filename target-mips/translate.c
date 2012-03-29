@@ -321,6 +321,8 @@ enum {
     /* OPC_ADDUH_QB_DSP is same as OPC_MULT_G_2E. */
     /* OPC_ADDUH_QB_DSP = 0x18 | OPC_SPECIAL3,    */
     OPC_CMPU_EQ_QB_DSP = 0x11 | OPC_SPECIAL3,
+    /* MIPS DSP GPR-Based Shift Sub-class */
+    OPC_SHLL_QB_DSP    = 0x13 | OPC_SPECIAL3,
 };
 
 /* BSHFL opcodes */
@@ -422,6 +424,33 @@ enum {
     OPC_PRECRQ_PH_W      = (0x14 << 6) | OPC_CMPU_EQ_QB_DSP,
     OPC_PRECRQ_RS_PH_W   = (0x15 << 6) | OPC_CMPU_EQ_QB_DSP,
     OPC_PRECRQU_S_QB_PH  = (0x0F << 6) | OPC_CMPU_EQ_QB_DSP,
+};
+
+#define MASK_SHLL_QB(op) (MASK_SPECIAL3(op) | (op & (0x1F << 6)))
+enum {
+    /* MIPS DSP GPR-Based Shift Sub-class */
+    OPC_SHLL_QB    = (0x00 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLLV_QB   = (0x02 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLL_PH    = (0x08 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLLV_PH   = (0x0A << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLL_S_PH  = (0x0C << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLLV_S_PH = (0x0E << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLL_S_W   = (0x14 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHLLV_S_W  = (0x16 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRL_QB    = (0x01 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRLV_QB   = (0x03 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRL_PH    = (0x19 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRLV_PH   = (0x1B << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRA_QB    = (0x04 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRA_R_QB  = (0x05 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRAV_QB   = (0x06 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRAV_R_QB = (0x07 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRA_PH    = (0x09 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRAV_PH   = (0x0B << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRA_R_PH  = (0x0D << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRAV_R_PH = (0x0F << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRA_R_W   = (0x15 << 6) | OPC_SHLL_QB_DSP,
+    OPC_SHRAV_R_W  = (0x17 << 6) | OPC_SHLL_QB_DSP,
 };
 
 /* Coprocessor 0 (rs field) */
@@ -12395,6 +12424,91 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
                 break;
             }
             break;
+        case OPC_SHLL_QB_DSP:
+            {
+                TCGv temp_rs = tcg_const_i32(rs);
+                op2 = MASK_SHLL_QB(ctx->opcode);
+                switch (op2) {
+                case OPC_SHLL_QB:
+                    gen_helper_shll_qb(cpu_gpr[rd], cpu_env,
+                                       temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHLLV_QB:
+                    gen_helper_shllv_qb(cpu_gpr[rd], cpu_env,
+                                        cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHLL_PH:
+                    gen_helper_shll_ph(cpu_gpr[rd], cpu_env,
+                                       temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHLLV_PH:
+                    gen_helper_shllv_ph(cpu_gpr[rd], cpu_env,
+                                        cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHLL_S_PH:
+                    gen_helper_shll_s_ph(cpu_gpr[rd], cpu_env,
+                                         temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHLLV_S_PH:
+                    gen_helper_shllv_s_ph(cpu_gpr[rd], cpu_env,
+                                          cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHLL_S_W:
+                    gen_helper_shll_s_w(cpu_gpr[rd], cpu_env,
+                                        temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHLLV_S_W:
+                    gen_helper_shllv_s_w(cpu_gpr[rd], cpu_env,
+                                         cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHRL_QB:
+                    gen_helper_shrl_qb(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRLV_QB:
+                    gen_helper_shrlv_qb(cpu_gpr[rd], cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHRL_PH:
+                    gen_helper_shrl_ph(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRLV_PH:
+                    gen_helper_shrlv_ph(cpu_gpr[rd], cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHRA_QB:
+                    gen_helper_shra_qb(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRA_R_QB:
+                    gen_helper_shra_r_qb(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRAV_QB:
+                    gen_helper_shrav_qb(cpu_gpr[rd], cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHRAV_R_QB:
+                    gen_helper_shrav_r_qb(cpu_gpr[rd], cpu_gpr[rs],
+                                          cpu_gpr[rt]);
+                    break;
+                case OPC_SHRA_PH:
+                    gen_helper_shra_ph(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRA_R_PH:
+                    gen_helper_shra_r_ph(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRAV_PH:
+                    gen_helper_shrav_ph(cpu_gpr[rd], cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                case OPC_SHRAV_R_PH:
+                    gen_helper_shrav_r_ph(cpu_gpr[rd], cpu_gpr[rs],
+                                          cpu_gpr[rt]);
+                    break;
+                case OPC_SHRA_R_W:
+                    gen_helper_shra_r_w(cpu_gpr[rd], temp_rs, cpu_gpr[rt]);
+                    break;
+                case OPC_SHRAV_R_W:
+                    gen_helper_shrav_r_w(cpu_gpr[rd], cpu_gpr[rs], cpu_gpr[rt]);
+                    break;
+                }
+                tcg_temp_free(temp_rs);
+                break;
+            }
 #if defined(TARGET_MIPS64)
         case OPC_DEXTM ... OPC_DEXT:
         case OPC_DINSM ... OPC_DINS:
