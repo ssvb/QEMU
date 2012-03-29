@@ -99,6 +99,9 @@ endif
 libobj-$(TARGET_SPARC) += int32_helper.o
 libobj-$(TARGET_SPARC64) += int64_helper.o
 libobj-$(TARGET_ALPHA) += int_helper.o fpu_helper.o sys_helper.o mem_helper.o
+ifeq ($(TARGET_BASE_ARCH), mips)
+libobj-y += dsp_helper.o
+endif
 
 libobj-y += disas.o
 libobj-$(CONFIG_TCI_DIS) += tci-dis.o
