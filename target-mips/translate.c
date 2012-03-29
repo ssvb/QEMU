@@ -312,6 +312,10 @@ enum {
     OPC_MODU_G_2E   = 0x23 | OPC_SPECIAL3,
     OPC_DMOD_G_2E   = 0x26 | OPC_SPECIAL3,
     OPC_DMODU_G_2E  = 0x27 | OPC_SPECIAL3,
+
+    /* MIPS DSP Load */
+    OPC_LX_DSP         = 0x0A | OPC_SPECIAL3,
+
 };
 
 /* BSHFL opcodes */
@@ -334,6 +338,14 @@ enum {
 /* MIPS DSP REGIMM opcodes */
 enum {
     OPC_BPOSGE32 = (0x1C << 16) | OPC_REGIMM,
+};
+
+#define MASK_LX(op) (MASK_SPECIAL3(op) | (op & (0x1F << 6)))
+/* MIPS DSP Load */
+enum {
+    OPC_LBUX = (0x06 << 6) | OPC_LX_DSP,
+    OPC_LHX  = (0x04 << 6) | OPC_LX_DSP,
+    OPC_LWX  = (0x00 << 6) | OPC_LX_DSP,
 };
 
 /* Coprocessor 0 (rs field) */
@@ -12061,6 +12073,41 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
         case OPC_MOD_G_2E ... OPC_MODU_G_2E:
             check_insn(env, ctx, INSN_LOONGSON2E);
             gen_loongson_integer(ctx, op1, rd, rs, rt);
+            break;
+        case OPC_LX_DSP:
+            op2 = MASK_LX(ctx->opcode);
+            switch (op2) {
+            case OPC_LBUX:
+                {
+                    TCGv addr = tcg_temp_new();
+
+                    save_cpu_state(ctx, 1);
+                    gen_op_addr_add(ctx, addr, cpu_gpr[rs], cpu_gpr[rt]);
+                    op_ld_lbu(cpu_gpr[rd], addr, ctx);
+                    tcg_temp_free_i32(addr);
+                    break;
+                }
+            case OPC_LHX:
+                {
+                    TCGv addr = tcg_temp_new();
+
+                    save_cpu_state(ctx, 1);
+                    gen_op_addr_add(ctx, addr, cpu_gpr[rs], cpu_gpr[rt]);
+                    op_ld_lh(cpu_gpr[rd], addr, ctx);
+                    tcg_temp_free_i32(addr);
+                    break;
+                }
+            case OPC_LWX:
+                {
+                    TCGv addr = tcg_temp_new();
+
+                    save_cpu_state(ctx, 1);
+                    gen_op_addr_add(ctx, addr, cpu_gpr[rs], cpu_gpr[rt]);
+                    op_ld_lw(cpu_gpr[rd], addr, ctx);
+                    tcg_temp_free_i32(addr);
+                    break;
+                }
+            }
             break;
 #if defined(TARGET_MIPS64)
         case OPC_DEXTM ... OPC_DEXT:
