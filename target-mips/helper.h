@@ -410,4 +410,8 @@ DEF_HELPER_FLAGS_3(mulq_s_w, 0, i32, env, i32, i32)
 DEF_HELPER_FLAGS_3(mulq_rs_w, 0, i32, env, i32, i32)
 DEF_HELPER_FLAGS_4(mulsa_w_ph, 0, void, env, int, i32, i32)
 
+/* DSP Bit/Manipulation Sub-class insns */
+DEF_HELPER_FLAGS_1(bitrev, TCG_CALL_CONST | TCG_CALL_PURE, i32, i32)
+DEF_HELPER_FLAGS_3(insv, 0, i32, env, i32, i32)
+
 #include "def-helper.h"

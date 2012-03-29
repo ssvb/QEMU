@@ -327,6 +327,8 @@ enum {
     /* OPC_MUL_PH_DSP is same as OPC_ADDUH_QB_DSP.   */
     /* OPC_MUL_PH_DSP  = 0x18 | OPC_SPECIAL3,   */
     OPC_DPA_W_PH_DSP   = 0x30 | OPC_SPECIAL3,
+    /* DSP Bit/Manipulation Sub-class */
+    OPC_INSV_DSP       = 0x0C | OPC_SPECIAL3,
 };
 
 /* BSHFL opcodes */
@@ -428,6 +430,12 @@ enum {
     OPC_PRECEU_PH_QBR   = (0x1D << 6) | OPC_ABSQ_S_PH_DSP,
     OPC_PRECEU_PH_QBLA  = (0x1E << 6) | OPC_ABSQ_S_PH_DSP,
     OPC_PRECEU_PH_QBRA  = (0x1F << 6) | OPC_ABSQ_S_PH_DSP,
+    /* DSP Bit/Manipulation Sub-class */
+    OPC_BITREV          = (0x1B << 6) | OPC_ABSQ_S_PH_DSP,
+    OPC_REPL_QB         = (0x02 << 6) | OPC_ABSQ_S_PH_DSP,
+    OPC_REPLV_QB        = (0x03 << 6) | OPC_ABSQ_S_PH_DSP,
+    OPC_REPL_PH         = (0x0A << 6) | OPC_ABSQ_S_PH_DSP,
+    OPC_REPLV_PH        = (0x0B << 6) | OPC_ABSQ_S_PH_DSP,
 };
 
 #define MASK_CMPU_EQ_QB(op) (MASK_SPECIAL3(op) | (op & (0x1F << 6)))
@@ -494,6 +502,12 @@ enum {
     OPC_MAQ_SA_W_PHL  = (0x10 << 6) | OPC_DPA_W_PH_DSP,
     OPC_MAQ_SA_W_PHR  = (0x12 << 6) | OPC_DPA_W_PH_DSP,
     OPC_MULSA_W_PH    = (0x02 << 6) | OPC_DPA_W_PH_DSP,
+};
+
+#define MASK_INSV(op) (MASK_SPECIAL3(op) | (op & (0x1F << 6)))
+enum {
+    /* DSP Bit/Manipulation Sub-class */
+    OPC_INSV = (0x00 << 6) | OPC_INSV_DSP,
 };
 
 /* Coprocessor 0 (rs field) */
@@ -12369,6 +12383,82 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
             case OPC_PRECEU_PH_QBRA:
                 gen_helper_preceu_ph_qbra(cpu_gpr[rd], cpu_gpr[rt]);
                 break;
+            case OPC_BITREV:
+                gen_helper_bitrev(cpu_gpr[rd], cpu_gpr[rt]);
+                break;
+            case OPC_REPL_QB:
+                {
+                    TCGv imm3, imm2, imm1, imm0;
+                    imm = (ctx->opcode >> 16) & 0xFF;
+                    imm3 = tcg_const_i32(imm);
+                    imm2 = tcg_const_i32(imm);
+                    imm1 = tcg_const_i32(imm);
+                    imm0 = tcg_const_i32(imm);
+                    tcg_gen_shli_i32(imm3, imm3, 24);
+                    tcg_gen_shli_i32(imm2, imm2, 16);
+                    tcg_gen_shli_i32(imm1, imm1, 8);
+                    tcg_gen_or_i32(cpu_gpr[rd], imm3, imm2);
+                    tcg_gen_or_i32(cpu_gpr[rd], cpu_gpr[rd], imm1);
+                    tcg_gen_or_i32(cpu_gpr[rd], cpu_gpr[rd], imm0);
+                    tcg_temp_free(imm3);
+                    tcg_temp_free(imm2);
+                    tcg_temp_free(imm1);
+                    tcg_temp_free(imm0);
+                    break;
+                }
+            case OPC_REPLV_QB:
+                {
+                    TCGv rt3, rt2, rt1, rt0;
+
+                    rt3 = tcg_const_i32(0);
+                    rt2 = tcg_const_i32(0);
+                    rt1 = tcg_const_i32(0);
+                    rt0 = tcg_const_i32(0);
+
+                    tcg_gen_andi_i32(rt3, cpu_gpr[rt], 0xFF);
+                    tcg_gen_andi_i32(rt2, cpu_gpr[rt], 0xFF);
+                    tcg_gen_andi_i32(rt1, cpu_gpr[rt], 0xFF);
+                    tcg_gen_andi_i32(rt0, cpu_gpr[rt], 0xFF);
+
+                    tcg_gen_shli_i32(rt3, rt3, 24);
+                    tcg_gen_shli_i32(rt2, rt2, 16);
+                    tcg_gen_shli_i32(rt1, rt1, 8);
+
+                    tcg_gen_or_i32(cpu_gpr[rd], rt3, rt2);
+                    tcg_gen_or_i32(cpu_gpr[rd], cpu_gpr[rd], rt1);
+                    tcg_gen_or_i32(cpu_gpr[rd], cpu_gpr[rd], rt0);
+
+                    tcg_temp_free(rt3);
+                    tcg_temp_free(rt2);
+                    tcg_temp_free(rt1);
+                    tcg_temp_free(rt0);
+                     break;
+                }
+            case OPC_REPL_PH:
+                {
+                    TCGv immhi, immlo;
+                    imm = (ctx->opcode >> 16) & 0x03FF;
+                    immhi = tcg_const_i32(imm);
+                    immlo = tcg_const_i32(imm);
+                    tcg_gen_shli_i32(immhi, immhi, 16);
+                    tcg_gen_or_i32(cpu_gpr[rd], immhi, immlo);
+                    tcg_temp_free(immhi);
+                    tcg_temp_free(immlo);
+                    break;
+                }
+            case OPC_REPLV_PH:
+                {
+                    TCGv rt0, rt1;
+                    rt0 = tcg_const_i32(0);
+                    rt1 = tcg_const_i32(0);
+                    tcg_gen_andi_i32(rt0, cpu_gpr[rt], 0xFFFF);
+                    tcg_gen_andi_i32(rt1, cpu_gpr[rt], 0xFFFF);
+                    tcg_gen_shli_i32(rt1, rt1, 16);
+                    tcg_gen_or_i32(cpu_gpr[rd], rt1, rt0);
+                    tcg_temp_free(rt0);
+                    tcg_temp_free(rt1);
+                    break;
+                }
             }
             break;
         case OPC_ADDU_QB_DSP:
@@ -12769,6 +12859,19 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
                     gen_helper_mulsa_w_ph(cpu_env, temp_rd,
                                           cpu_gpr[rs], cpu_gpr[rt]);
                     tcg_temp_free(temp_rd);
+                    break;
+                }
+            }
+            break;
+        case OPC_INSV_DSP:
+            op2 = MASK_INSV(ctx->opcode);
+            switch (op2) {
+            case OPC_INSV:
+                {
+                    TCGv temp_rt = tcg_const_i32(rt);
+                    gen_helper_insv(cpu_gpr[rt], cpu_env,
+                                    cpu_gpr[rs], cpu_gpr[rt]);
+                    tcg_temp_free(temp_rt);
                     break;
                 }
             }

@@ -2979,6 +2979,48 @@ void helper_mulsa_w_ph(CPUMIPSState *env, int ac, uint32_t rs, uint32_t rt)
     env->active_tc.LO[ac] =  acc & MIPSDSP_LLO;
 }
 
+/** DSP Bit/Manipulation Sub-class insns **/
+uint32_t helper_bitrev(uint32_t rt)
+{
+    int32_t temp;
+    uint32_t rd;
+    int i, last;
+
+    temp = rt & MIPSDSP_LO;
+    rd = 0;
+    for (i = 0; i < 16; i++) {
+        last = temp % 2;
+        temp = temp >> 1;
+        rd = rd | (last << (15 - i));
+    }
+
+    return rd;
+}
+
+uint32_t helper_insv(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t pos, size, msb, lsb, rs_f, rt_f;
+    uint32_t temp, temprs, temprt;
+    target_ulong dspc;
+
+    dspc = env->active_tc.DSPControl;
+    pos  = dspc & 0x1F;
+    size = (dspc >> 7) & 0x1F;
+    msb  = pos + size - 1;
+    lsb  = pos;
+
+    if (lsb > msb) {
+        return rt;
+    }
+
+    rs_f = (((int32_t)0x01 << (msb - lsb + 1 + 1)) - 1) << lsb;
+    rt_f = rs_f ^ 0xFFFFFFFF;
+    temprs = rs & rs_f;
+    temprt = rt & rt_f;
+    temp = temprs | temprt;
+    return temp;
+}
+
 #undef MIPSDSP_LHI
 #undef MIPSDSP_LLO
 #undef MIPSDSP_HI
