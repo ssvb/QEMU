@@ -971,3 +971,879 @@ static inline uint8_t mipsdsp_satu8_sub(CPUMIPSState *env, uint8_t a, uint8_t b)
     return result;
 }
 /*** MIPS DSP internal functions end ***/
+
+#define MIPSDSP_LHI 0xFFFFFFFF00000000ull
+#define MIPSDSP_LLO 0x00000000FFFFFFFFull
+#define MIPSDSP_HI  0xFFFF0000
+#define MIPSDSP_LO  0x0000FFFF
+#define MIPSDSP_Q3  0xFF000000
+#define MIPSDSP_Q2  0x00FF0000
+#define MIPSDSP_Q1  0x0000FF00
+#define MIPSDSP_Q0  0x000000FF
+
+/** DSP Arithmetic Sub-class insns **/
+uint32_t helper_addq_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    int16_t  rsh, rsl, rth, rtl, temph, templ;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    temph = mipsdsp_add_i16(env, rsh, rth);
+    templ = mipsdsp_add_i16(env, rsl, rtl);
+    rd = ((unsigned int)temph << 16) | ((unsigned int)templ & 0xFFFF);
+
+    return rd;
+}
+
+uint32_t helper_addq_s_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    int16_t rsh, rsl, rth, rtl, temph, templ;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    temph = mipsdsp_sat_add_i16(env, rsh, rth);
+    templ = mipsdsp_sat_add_i16(env, rsl, rtl);
+    rd = ((uint32_t)temph << 16) | ((uint32_t)templ & 0xFFFF);
+
+    return rd;
+}
+
+uint32_t helper_addq_s_w(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    rd = mipsdsp_sat_add_i32(env, rs, rt);
+    return rd;
+}
+
+uint32_t helper_addu_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    uint8_t  rs0, rs1, rs2, rs3;
+    uint8_t  rt0, rt1, rt2, rt3;
+    uint8_t  temp0, temp1, temp2, temp3;
+
+    rs0 =  rs & MIPSDSP_Q0;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+
+    rt0 =  rt & MIPSDSP_Q0;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+
+    temp0 = mipsdsp_add_u8(env, rs0, rt0);
+    temp1 = mipsdsp_add_u8(env, rs1, rt1);
+    temp2 = mipsdsp_add_u8(env, rs2, rt2);
+    temp3 = mipsdsp_add_u8(env, rs3, rt3);
+
+    rd = (((uint32_t)temp3 << 24) & MIPSDSP_Q3) | \
+         (((uint32_t)temp2 << 16) & MIPSDSP_Q2) | \
+         (((uint32_t)temp1 <<  8) & MIPSDSP_Q1) | \
+         ((uint32_t)temp0         & MIPSDSP_Q0);
+
+    return rd;
+}
+
+uint32_t helper_addu_s_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    uint8_t rs0, rs1, rs2, rs3;
+    uint8_t rt0, rt1, rt2, rt3;
+    uint8_t temp0, temp1, temp2, temp3;
+
+    rs0 =  rs & MIPSDSP_Q0;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+
+    rt0 =  rt & MIPSDSP_Q0;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+
+    temp0 = mipsdsp_sat_add_u8(env, rs0, rt0);
+    temp1 = mipsdsp_sat_add_u8(env, rs1, rt1);
+    temp2 = mipsdsp_sat_add_u8(env, rs2, rt2);
+    temp3 = mipsdsp_sat_add_u8(env, rs3, rt3);
+
+    rd = (((uint8_t)temp3 << 24) & MIPSDSP_Q3) | \
+         (((uint8_t)temp2 << 16) & MIPSDSP_Q2) | \
+         (((uint8_t)temp1 <<  8) & MIPSDSP_Q1) | \
+         ((uint8_t)temp0         & MIPSDSP_Q0);
+
+    return rd;
+}
+
+uint32_t helper_adduh_qb(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    uint8_t  rs0, rs1, rs2, rs3;
+    uint8_t  rt0, rt1, rt2, rt3;
+    uint8_t  temp0, temp1, temp2, temp3;
+
+    rs0 =  rs & MIPSDSP_Q0;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+
+    rt0 =  rt & MIPSDSP_Q0;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+
+    temp0 = mipsdsp_rshift1_add_u8(rs0, rt0);
+    temp1 = mipsdsp_rshift1_add_u8(rs1, rt1);
+    temp2 = mipsdsp_rshift1_add_u8(rs2, rt2);
+    temp3 = mipsdsp_rshift1_add_u8(rs3, rt3);
+
+    rd = (((uint32_t)temp3 << 24) & MIPSDSP_Q3) | \
+         (((uint32_t)temp2 << 16) & MIPSDSP_Q2) | \
+         (((uint32_t)temp1 <<  8) & MIPSDSP_Q1) | \
+         ((uint32_t)temp0         & MIPSDSP_Q0);
+
+    return rd;
+}
+
+uint32_t helper_adduh_r_qb(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    uint8_t  rs0, rs1, rs2, rs3;
+    uint8_t  rt0, rt1, rt2, rt3;
+    uint8_t  temp0, temp1, temp2, temp3;
+
+    rs0 =  rs & MIPSDSP_Q0;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+
+    rt0 =  rt & MIPSDSP_Q0;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+
+    temp0 = mipsdsp_rrshift1_add_u8(rs0, rt0);
+    temp1 = mipsdsp_rrshift1_add_u8(rs1, rt1);
+    temp2 = mipsdsp_rrshift1_add_u8(rs2, rt2);
+    temp3 = mipsdsp_rrshift1_add_u8(rs3, rt3);
+
+    rd = (((uint32_t)temp3 << 24) & MIPSDSP_Q3) | \
+         (((uint32_t)temp2 << 16) & MIPSDSP_Q2) | \
+         (((uint32_t)temp1 <<  8) & MIPSDSP_Q1) | \
+         ((uint32_t)temp0         & MIPSDSP_Q0);
+
+    return rd;
+}
+
+uint32_t helper_addu_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl, rth, rtl, temph, templ;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+    temph = mipsdsp_add_u16(env, rsh, rth);
+    templ = mipsdsp_add_u16(env, rsl, rtl);
+    rd = ((uint32_t)temph << 16) | ((uint32_t)templ & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_addu_s_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl, rth, rtl, temph, templ;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+    temph = mipsdsp_sat_add_u16(env, rsh, rth);
+    templ = mipsdsp_sat_add_u16(env, rsl, rtl);
+    rd = ((uint32_t)temph << 16) | ((uint32_t)templ & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_addqh_ph(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    int16_t rsh, rsl, rth, rtl, temph, templ;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    temph = mipsdsp_rshift1_add_q16(rsh, rth);
+    templ = mipsdsp_rshift1_add_q16(rsl, rtl);
+    rd = ((uint32_t)temph << 16) | ((uint32_t)templ & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_addqh_r_ph(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    int16_t rsh, rsl, rth, rtl, temph, templ;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    temph = mipsdsp_rrshift1_add_q16(rsh, rth);
+    templ = mipsdsp_rrshift1_add_q16(rsl, rtl);
+    rd = ((uint32_t)temph << 16) | ((uint32_t)templ & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_addqh_w(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = mipsdsp_rshift1_add_q32(rs, rt);
+
+    return rd;
+}
+
+uint32_t helper_addqh_r_w(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = mipsdsp_rrshift1_add_q32(rs, rt);
+
+    return rd;
+}
+
+uint32_t helper_subq_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl;
+    uint16_t rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    tempB = mipsdsp_sub_i16(env, rsh, rth);
+    tempA = mipsdsp_sub_i16(env, rsl, rtl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subq_s_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl;
+    uint16_t rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    tempB = mipsdsp_sat16_sub(env, rsh, rth);
+    tempA = mipsdsp_sat16_sub(env, rsl, rtl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subq_s_w(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = mipsdsp_sat32_sub(env, rs, rt);
+
+    return rd;
+}
+
+uint32_t helper_subu_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t tempD, tempC, tempB, tempA;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    tempD = mipsdsp_sub_u8(env, rs3, rt3);
+    tempC = mipsdsp_sub_u8(env, rs2, rt2);
+    tempB = mipsdsp_sub_u8(env, rs1, rt1);
+    tempA = mipsdsp_sub_u8(env, rs0, rt0);
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+    return rd;
+}
+
+uint32_t helper_subu_s_qb(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t tempD, tempC, tempB, tempA;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    tempD = mipsdsp_satu8_sub(env, rs3, rt3);
+    tempC = mipsdsp_satu8_sub(env, rs2, rt2);
+    tempB = mipsdsp_satu8_sub(env, rs1, rt1);
+    tempA = mipsdsp_satu8_sub(env, rs0, rt0);
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subuh_qb(uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t tempD, tempC, tempB, tempA;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    tempD = ((uint16_t)rs3 - (uint16_t)rt3) >> 1;
+    tempC = ((uint16_t)rs2 - (uint16_t)rt2) >> 1;
+    tempB = ((uint16_t)rs1 - (uint16_t)rt1) >> 1;
+    tempA = ((uint16_t)rs0 - (uint16_t)rt0) >> 1;
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subuh_r_qb(uint32_t rs, uint32_t rt)
+{
+    uint8_t rs3, rs2, rs1, rs0;
+    uint8_t rt3, rt2, rt1, rt0;
+    uint8_t tempD, tempC, tempB, tempA;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    rt0 =  rt & MIPSDSP_Q0;
+
+    tempD = ((uint16_t)rs3 - (uint16_t)rt3 + 1) >> 1;
+    tempC = ((uint16_t)rs2 - (uint16_t)rt2 + 1) >> 1;
+    tempB = ((uint16_t)rs1 - (uint16_t)rt1 + 1) >> 1;
+    tempA = ((uint16_t)rs0 - (uint16_t)rt0 + 1) >> 1;
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subu_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl, rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    tempB = mipsdsp_sub_u16_u16(env, rth, rsh);
+    tempA = mipsdsp_sub_u16_u16(env, rtl, rsl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+    return rd;
+}
+
+uint32_t helper_subu_s_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl, rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    tempB = mipsdsp_satu16_sub_u16_u16(env, rth, rsh);
+    tempA = mipsdsp_satu16_sub_u16_u16(env, rtl, rsl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subqh_ph(uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl;
+    uint16_t rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+    tempB = mipsdsp_rshift1_sub_q16(rsh, rth);
+    tempA = mipsdsp_rshift1_sub_q16(rsl, rtl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subqh_r_ph(uint32_t rs, uint32_t rt)
+{
+    uint16_t rsh, rsl;
+    uint16_t rth, rtl;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+    tempB = mipsdsp_rrshift1_sub_q16(rsh, rth);
+    tempA = mipsdsp_rrshift1_sub_q16(rsl, rtl);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_subqh_w(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = mipsdsp_rshift1_sub_q32(rs, rt);
+
+    return rd;
+}
+
+uint32_t helper_subqh_r_w(uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = mipsdsp_rrshift1_sub_q32(rs, rt);
+
+    return rd;
+}
+
+uint32_t helper_addsc(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    uint64_t temp, tempRs, tempRt;
+    int32_t flag;
+
+    tempRs = (uint64_t)rs & MIPSDSP_LLO;
+    tempRt = (uint64_t)rt & MIPSDSP_LLO;
+
+    temp = tempRs + tempRt;
+    flag = (temp & 0x0100000000ull) >> 32;
+    set_DSPControl_carryflag(env, flag);
+    rd = temp & MIPSDSP_LLO;
+
+    return rd;
+}
+
+uint32_t helper_addwc(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint32_t rd;
+    int32_t temp32, temp31;
+    int64_t rsL, rtL, tempL;
+
+    rsL = (int32_t)rs;
+    rtL = (int32_t)rt;
+    tempL = rsL + rtL + get_DSPControl_carryflag(env);
+    temp31 = (tempL >> 31) & 0x01;
+    temp32 = (tempL >> 32) & 0x01;
+
+    if (temp31 != temp32) {
+        set_DSPControl_overflow_flag(env, 1, 20);
+    }
+
+    rd = tempL & MIPSDSP_LLO;
+
+    return rd;
+}
+
+uint32_t helper_modsub(uint32_t rs, uint32_t rt)
+{
+    int32_t decr;
+    uint16_t lastindex;
+    uint32_t rd;
+
+    decr = rt & MIPSDSP_Q0;
+    lastindex = (rt >> 8) & MIPSDSP_LO;
+
+    if (rs == 0x00000000) {
+        rd = (uint32_t)lastindex;
+    } else {
+        rd = rs - decr;
+    }
+
+    return rd;
+}
+
+uint32_t helper_raddu_w_qb(uint32_t rs)
+{
+    uint8_t  rs3, rs2, rs1, rs0;
+    uint16_t temp;
+    uint32_t rd;
+
+    rs3 = (rs & MIPSDSP_Q3) >> 24;
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs1 = (rs & MIPSDSP_Q1) >>  8;
+    rs0 =  rs & MIPSDSP_Q0;
+
+    temp = (uint16_t)rs3 + (uint16_t)rs2 + (uint16_t)rs1 + (uint16_t)rs0;
+    rd = temp;
+
+    return rd;
+}
+
+uint32_t helper_absq_s_qb(CPUMIPSState *env, uint32_t rt)
+{
+    uint32_t rd;
+    int8_t tempD, tempC, tempB, tempA;
+
+    tempD = (rt & MIPSDSP_Q3) >> 24;
+    tempC = (rt & MIPSDSP_Q2) >> 16;
+    tempB = (rt & MIPSDSP_Q1) >>  8;
+    tempA =  rt & MIPSDSP_Q0;
+
+    rd = (((uint32_t)mipsdsp_sat_abs_u8 (env, tempD) << 24) & MIPSDSP_Q3) | \
+         (((uint32_t)mipsdsp_sat_abs_u8 (env, tempC) << 16) & MIPSDSP_Q2) | \
+         (((uint32_t)mipsdsp_sat_abs_u8 (env, tempB) <<  8) & MIPSDSP_Q1) | \
+         ((uint32_t)mipsdsp_sat_abs_u8 (env, tempA) & MIPSDSP_Q0);
+
+    return rd;
+}
+
+uint32_t helper_absq_s_ph(CPUMIPSState *env, uint32_t rt)
+{
+    uint32_t rd;
+    int16_t tempA, tempB;
+
+    tempA = (rt & MIPSDSP_HI) >> 16;
+    tempB =  rt & MIPSDSP_LO;
+
+    rd = ((uint32_t)mipsdsp_sat_abs_u16 (env, tempA) << 16) | \
+         ((uint32_t)(mipsdsp_sat_abs_u16 (env, tempB)) & 0xFFFF);
+
+    return rd;
+}
+
+uint32_t helper_absq_s_w(CPUMIPSState *env, uint32_t rt)
+{
+    uint32_t rd;
+    int32_t temp;
+
+    temp = rt;
+    rd = mipsdsp_sat_abs_u32(env, temp);
+
+    return rd;
+}
+
+uint32_t helper_precr_qb_ph(uint32_t rs, uint32_t rt)
+{
+    uint8_t  rs2, rs0, rt2, rt0;
+    uint32_t rd;
+
+    rs2 = (rs & MIPSDSP_Q2) >> 16;
+    rs0 =  rs & MIPSDSP_Q0;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt0 =  rt & MIPSDSP_Q0;
+    rd = ((uint32_t)rs2 << 24) | ((uint32_t)rs0 << 16) | \
+         ((uint32_t)rt2 <<  8) | (uint32_t)rt0;
+
+    return rd;
+}
+
+uint32_t helper_precrq_qb_ph(uint32_t rs, uint32_t rt)
+{
+    uint8_t tempD, tempC, tempB, tempA;
+    uint32_t rd;
+
+    tempD = (rs & MIPSDSP_Q3) >> 24;
+    tempC = (rs & MIPSDSP_Q1) >>  8;
+    tempB = (rt & MIPSDSP_Q3) >> 24;
+    tempA = (rt & MIPSDSP_Q1) >>  8;
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_precr_sra_ph_w(int sa, uint32_t rs, uint32_t rt)
+{
+    uint16_t tempB, tempA;
+
+    if (sa == 0) {
+        tempB = rt & MIPSDSP_LO;
+        tempA = rs & MIPSDSP_LO;
+    } else {
+        tempB = ((int32_t)rt >> sa) & MIPSDSP_LO;
+        tempA = ((int32_t)rs >> sa) & MIPSDSP_LO;
+    }
+    rt = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+
+    return rt;
+}
+
+uint32_t helper_precr_sra_r_ph_w(int sa, uint32_t rs, uint32_t rt)
+{
+    uint64_t tempB, tempA;
+
+    if (sa == 0) {
+        tempB = (rt & MIPSDSP_LO) << 1;
+        tempA = (rs & MIPSDSP_LO) << 1;
+    } else {
+        tempB = ((int32_t)rt >> (sa - 1)) + 1;
+        tempA = ((int32_t)rs >> (sa - 1)) + 1;
+    }
+    rt = (((tempB >> 1) & MIPSDSP_LO) << 16) | ((tempA >> 1) & MIPSDSP_LO);
+
+    return rt;
+}
+
+uint32_t helper_precrq_ph_w(uint32_t rs, uint32_t rt)
+{
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    tempB = (rs & MIPSDSP_HI) >> 16;
+    tempA = (rt & MIPSDSP_HI) >> 16;
+    rd = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_precrq_rs_ph_w(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    tempB = mipsdsp_trunc16_sat16_round(env, rs);
+    tempA = mipsdsp_trunc16_sat16_round(env, rt);
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_precrqu_s_qb_ph(CPUMIPSState *env, uint32_t rs, uint32_t rt)
+{
+    uint8_t  tempD, tempC, tempB, tempA;
+    uint16_t rsh, rsl, rth, rtl;
+    uint32_t rd;
+
+    rsh = (rs & MIPSDSP_HI) >> 16;
+    rsl =  rs & MIPSDSP_LO;
+    rth = (rt & MIPSDSP_HI) >> 16;
+    rtl =  rt & MIPSDSP_LO;
+
+    tempD = mipsdsp_sat8_reduce_precision(env, rsh);
+    tempC = mipsdsp_sat8_reduce_precision(env, rsl);
+    tempB = mipsdsp_sat8_reduce_precision(env, rth);
+    tempA = mipsdsp_sat8_reduce_precision(env, rtl);
+
+    rd = ((uint32_t)tempD << 24) | ((uint32_t)tempC << 16) | \
+         ((uint32_t)tempB <<  8) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_preceq_w_phl(uint32_t rt)
+{
+    uint32_t rd;
+
+    rd = rt & MIPSDSP_HI;
+
+    return rd;
+}
+
+uint32_t helper_preceq_w_phr(uint32_t rt)
+{
+    uint16_t rtl;
+    uint32_t rd;
+
+    rtl = rt & MIPSDSP_LO;
+    rd  = rtl << 16;
+
+    return rd;
+}
+
+uint32_t helper_precequ_ph_qbl(uint32_t rt)
+{
+    uint8_t  rt3, rt2;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+
+    tempB = (uint16_t)rt3 << 7;
+    tempA = (uint16_t)rt2 << 7;
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_precequ_ph_qbr(uint32_t rt)
+{
+    uint8_t  rt1, rt0;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt1 = (rt & MIPSDSP_Q1) >> 8;
+    rt0 =  rt & MIPSDSP_Q0;
+    tempB = (uint16_t)rt1 << 7;
+    tempA = (uint16_t)rt0 << 7;
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_precequ_ph_qbla(uint32_t rt)
+{
+    uint8_t  rt3, rt1;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+
+    tempB = (uint16_t)rt3 << 7;
+    tempA = (uint16_t)rt1 << 7;
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_precequ_ph_qbra(uint32_t rt)
+{
+    uint8_t  rt2, rt0;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt0 =  rt & MIPSDSP_Q0;
+    tempB = (uint16_t)rt2 << 7;
+    tempA = (uint16_t)rt0 << 7;
+    rd = ((uint32_t)tempB << 16) | (uint32_t)tempA;
+
+    return rd;
+}
+
+uint32_t helper_preceu_ph_qbl(uint32_t rt)
+{
+    uint8_t  rt3, rt2;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    tempB = (uint16_t) rt3;
+    tempA = (uint16_t) rt2;
+    rd = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_preceu_ph_qbr(uint32_t rt)
+{
+    uint8_t  rt1, rt0;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt1 = (rt & MIPSDSP_Q1) >> 8;
+    rt0 =  rt & MIPSDSP_Q0;
+    tempB = (uint16_t) rt1;
+    tempA = (uint16_t) rt0;
+    rd = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+    return rd;
+}
+
+uint32_t helper_preceu_ph_qbla(uint32_t rt)
+{
+    uint8_t  rt3, rt1;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt3 = (rt & MIPSDSP_Q3) >> 24;
+    rt1 = (rt & MIPSDSP_Q1) >>  8;
+    tempB = (uint16_t) rt3;
+    tempA = (uint16_t) rt1;
+    rd = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+
+    return rd;
+}
+
+uint32_t helper_preceu_ph_qbra(uint32_t rt)
+{
+    uint8_t  rt2, rt0;
+    uint16_t tempB, tempA;
+    uint32_t rd;
+
+    rt2 = (rt & MIPSDSP_Q2) >> 16;
+    rt0 =  rt & MIPSDSP_Q0;
+    tempB = (uint16_t)rt2;
+    tempA = (uint16_t)rt0;
+    rd = ((uint32_t)tempB << 16) | ((uint32_t)tempA & MIPSDSP_LO);
+    return rd;
+}
+
+#undef MIPSDSP_LHI
+#undef MIPSDSP_LLO
+#undef MIPSDSP_HI
+#undef MIPSDSP_LO
+#undef MIPSDSP_Q0
+#undef MIPSDSP_Q1
+#undef MIPSDSP_Q2
+#undef MIPSDSP_Q3
