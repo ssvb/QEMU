@@ -331,6 +331,11 @@ enum {
     OPC_DSHD     = (0x05 << 6) | OPC_DBSHFL,
 };
 
+/* MIPS DSP REGIMM opcodes */
+enum {
+    OPC_BPOSGE32 = (0x1C << 16) | OPC_REGIMM,
+};
+
 /* Coprocessor 0 (rs field) */
 #define MASK_CP0(op)       MASK_OP_MAJOR(op) | (op & (0x1F << 21))
 
@@ -2755,6 +2760,12 @@ static void gen_compute_branch (DisasContext *ctx, uint32_t opc,
         }
         btgt = ctx->pc + insn_bytes + offset;
         break;
+    case OPC_BPOSGE32:
+        t0 = cpu_dspctrl;
+        tcg_gen_andi_i32(t0, t0, 0x3F);
+        bcond_compute = 1;
+        btgt = ctx->pc + insn_bytes + offset;
+        break;
     case OPC_J:
     case OPC_JAL:
     case OPC_JALX:
@@ -2943,6 +2954,10 @@ static void gen_compute_branch (DisasContext *ctx, uint32_t opc,
             tcg_gen_setcondi_tl(TCG_COND_LT, bcond, t0, 0);
             MIPS_DEBUG("bltzl %s, " TARGET_FMT_lx, regnames[rs], btgt);
             goto likely;
+        case OPC_BPOSGE32:
+            tcg_gen_setcondi_tl(TCG_COND_GE, bcond, t0, 32);
+            MIPS_DEBUG("bposge32 %s, " TARGET_FMT_lx, t0, btgt);
+            goto not_likely;
         case OPC_BLTZALS:
         case OPC_BLTZAL:
             ctx->hflags |= (opc == OPC_BLTZALS
@@ -11180,8 +11195,6 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
             *is_branch = 1;
             break;
         case BPOSGE64:
-        case BPOSGE32:
-            /* MIPS DSP: not implemented */
             /* Fall through */
         default:
             MIPS_INVAL("pool32i");
@@ -12090,6 +12103,10 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int *is_branch)
         case OPC_SYNCI:
             check_insn(env, ctx, ISA_MIPS32R2);
             /* Treat as NOP. */
+            break;
+        case OPC_BPOSGE32:    /* MIPS DSP branch */
+            gen_compute_branch(ctx, op1, 4, -1, -2, (int32_t)imm << 2);
+            *is_branch = 1;
             break;
         default:            /* Invalid */
             MIPS_INVAL("regimm");
