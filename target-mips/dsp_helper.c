@@ -536,7 +536,7 @@ static inline uint16_t mipsdsp_mul_u8_u16(CPUMIPSState *env,
     tempA = a;
     tempB = b;
     tempI = tempA * tempB;
-    if (tempI > 0x00) {
+    if (tempI > 0x0000FFFF) {
         tempI = 0x0000FFFF;
         set_DSPControl_overflow_flag(env, 1, 21);
     }
